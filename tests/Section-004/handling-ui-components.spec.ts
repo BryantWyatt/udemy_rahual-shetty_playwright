@@ -42,5 +42,39 @@ test.describe("UI Controls", () => {
                 await checkBoxToC.uncheck();
                 expect(await checkBoxToC.isChecked()).toBeFalsy();
         });
+        test("BlinkingText", async ({ page }) => {
+                const documentLink = page.locator("[href*='documents-request']");
+
+                await expect(documentLink).toHaveAttribute("class", "blinkingText");
+        })
 })
+
+// This test is outside the scope so it opens it's own dedicated browser with context.
+// TODO: Figure out how to work this with the existing before.
+test("Child windows handling", async ({ browser }) => {
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        const userNameInput = page.locator("input#username");
+        await page.goto("https://rahulshettyacademy.com/loginpagePractise/");
+        const documentLink = page.locator("[href*='documents-request']");
+
+        /*
+                listen for any new page to open
+                Three states of promises: Pending, Rejected, Fulfilled
+        */
+        const [newPage] = await Promise.all([
+                context.waitForEvent('page'),
+                documentLink.click()
+        ]);
+
+        /*
+                Text can return undefined which is not a valid string.
+                To resolve this, if the text is undefined, we return an empty string.
+        */
+        const text = await newPage.locator(".red").textContent();
+        const domain = text?.split("@")[1].split(" ")[0];
+
+        await userNameInput.fill(domain ? domain : "");
+
+});
 
